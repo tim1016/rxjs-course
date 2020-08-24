@@ -1,6 +1,12 @@
 import { Component } from "@angular/core";
-import { interval, timer, fromEvent } from "rxjs";
-import { shareReplay } from "rxjs/operators";
+import { interval, timer, fromEvent, Observable, noop } from "rxjs";
+import { shareReplay, map } from "rxjs/operators";
+import { createHttpObservable } from "../utils";
+import { Course } from "./model/course";
+
+interface T {
+  payload: object;
+}
 
 @Component({
   selector: "app-root",
@@ -11,28 +17,12 @@ export class AppComponent {
   title = "app";
   num = 0;
   ngOnInit() {
-    const interval$ = timer(3000, 1000);
-
-    const sub = interval$.subscribe((val) => {
-      console.log(`Stream 1 : ${val}`);
-    });
-
-    const click$ = fromEvent(document, "click");
-
-    click$.subscribe(
-      (event) => {
-        console.log(event);
-      },
-      (error) => {
-        console.log(error);
-      },
-      () => {
-        console.log("completed");
-      }
+    const http$ = createHttpObservable("/api/courses");
+    const courses$ = http$.pipe(
+      map((value: T) => <Course[]>Object.values(value.payload))
     );
-
-    setTimeout(() => {
-      sub.unsubscribe();
-    }, 16000);
+    courses$.subscribe(console.log, noop, () => {
+      console.log("Completed");
+    });
   }
 }
